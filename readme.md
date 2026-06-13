@@ -9,6 +9,7 @@ raspberry-pi-wiring-test
 required libs
 ```bash
 sudo apt-get install libportaudio2
+sudo apt install git -y
 ```
 
 ## Test Audio Capture
@@ -41,6 +42,18 @@ python3 -m venv venv
 source ./venv/bin/activate
 pip install -r requirements.txt
 python process_audio.py
+
+```
+
+Test meshtastic connectivity
+```bash
+pip install --upgrade "meshtastic[cli]"
+meshtastic --version
+# plug in device
+dmesg | grep tty
+meshtastic --port /dev/ttyUSB1 --noproto
+# or
+meshtastic --port /dev/ttyACM0 --noproto
 ```
 
 ### Todo

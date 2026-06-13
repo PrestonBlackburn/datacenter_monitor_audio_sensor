@@ -1,2 +1,3 @@
 test_audio_processing/test_results/
 test_audio_processing/test_signals/
+*.wav

@@ -136,7 +136,7 @@ def send_message(device_name: str, message: str, channel_index: int = TEST_CHANN
     
 
 class AudioEventHandler(FileSystemEventHandler):
-    def on_created(self, event):
+    def on_closed(self, event):
             if not event.is_directory and event.src_path.endswith(".wav"):
                 print(f"Processing: {event.src_path}")
                 

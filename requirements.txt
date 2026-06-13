@@ -1,0 +1,7 @@
+numpy
+sounddevice
+soundfile
+scipy
+matplotlib
+watchdog
+meshtastic[cli]

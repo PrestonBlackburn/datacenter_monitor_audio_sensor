@@ -1,0 +1,14 @@
+[Unit]
+Description=Audio Monitoring Python Script
+
+[Service]
+Type=simple
+WorkingDirectory=/home/your_username/my_project
+ExecStart=/home/your_username/my_project/venv/bin/python -u process_audio.py
+Restart=on-failure
+RestartSec=60
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -18,7 +18,7 @@ import threading
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
-MESH_DEVICE_ACTIVE = False
+MESH_DEVICE_ACTIVE = True
 BANDS = [
     {"label": "110 Hz",  "centre": 110,  "low":  60,  "high": 160},
     {"label": "440 Hz",  "centre": 440,  "low": 390,  "high": 490},
@@ -31,7 +31,7 @@ BAND_WIDTH = 50  # ± Hz
 TEST_CHANNEL_INDEX = 1
 _TZ_NAME = time.tzname[time.localtime().tm_isdst > 0]
 PRODUCER_DEVICE = '/dev/ttyACM0' #pico pi
-CONSUMER_DEVICE = '/dev/ttyUSB1' #pico pi
+CONSUMER_DEVICE = '/dev/ttyUSB0' #pico pi
 
 # Recording for arecord
 AUDIO_DEVICE = "plughw:1"
@@ -199,10 +199,10 @@ class AudioEventHandler(FileSystemEventHandler):
                 band_results = band_average_dbfs(freqs, Zxx, BANDS)
 
                 if MESH_DEVICE_ACTIVE:
-                    time = [datetime.datetime.now().strftime("%Y-%m-%d %H:%M") for result in band_results]
+                    process_timestamp = [datetime.datetime.now().strftime("%Y-%m-%d %H:%M") for result in band_results]
                     hz = [result['centre'] for result in band_results]
                     dbfs = [result['dbfs'] for result in band_results]
-                    message = [time, hz, dbfs]           
+                    message = [process_timestamp, hz, dbfs]           
                     message_json = json.dumps(message, separators=(',', ':'))
                     # 2. Send summary logic (TODO)
                     send_message(
@@ -216,6 +216,11 @@ class AudioEventHandler(FileSystemEventHandler):
 
 
 if __name__ == "__main__":
+
+    # maybe add a wait to start if running remotely 
+    # to make sure that the other services have started
+    print("Waiting for devices to initialize...")
+    time.sleep(60)
 
     recorder_thread = threading.Thread(
         target=record_loop,

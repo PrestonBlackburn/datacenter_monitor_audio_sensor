@@ -11,6 +11,9 @@ import time
 from typing import Any
 import json
 import datetime
+import subprocess
+import threading
+
 
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
@@ -30,6 +33,52 @@ _TZ_NAME = time.tzname[time.localtime().tm_isdst > 0]
 PRODUCER_DEVICE = '/dev/ttyACM0' #pico pi
 CONSUMER_DEVICE = '/dev/ttyUSB1' #pico pi
 
+# Recording for arecord
+AUDIO_DEVICE = "plughw:1"
+RECORD_DURATION = 60
+SAMPLE_RATE = 16000
+AUDIO_FORMAT = "S16_LE"
+OUTPUT_DIR = "./temp_recordings"
+
+# ----------------- Capture .wav files --------------------
+_stop_event = threading.Event()
+
+def record_loop(
+    device: str = AUDIO_DEVICE,
+    duration: int = RECORD_DURATION,
+    sample_rate: int = SAMPLE_RATE,
+    fmt: str = AUDIO_FORMAT,
+    output_dir: str = OUTPUT_DIR,
+) -> None:
+    # Note! I think there could be gaps in the recording with this approach
+    # need to investigate later
+    print(f"[recorder] Starting continuous recording on {device} ...")
+    while not _stop_event.is_set():
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = os.path.join(output_dir, f"recording_{timestamp}.wav")
+        print(f"[recorder] Recording {filename} ...")
+        try:
+            subprocess.run(
+                [
+                    "arecord",
+                    "-D", device,
+                    "-c1",
+                    "-r", str(sample_rate),
+                    "-f", fmt,
+                    "-d", str(duration),
+                    filename,
+                ],
+                check=True,
+            )
+        except subprocess.CalledProcessError as exc:
+            print(f"[recorder] arecord error (exit {exc.returncode}); retrying ...")
+            time.sleep(1)
+        except FileNotFoundError:
+            _stop_event.wait(5)
+
+
+
+# -------------- Processing for .wav files ----------------
 
 def load_wav(path: str) -> tuple[int, np.ndarray]:
     """Load a WAV file and return (sample_rate, mono_float_samples)."""
@@ -167,7 +216,17 @@ class AudioEventHandler(FileSystemEventHandler):
 
 
 if __name__ == "__main__":
-    wav_files_path = "."
+
+    recorder_thread = threading.Thread(
+        target=record_loop,
+        kwargs={"output_dir": OUTPUT_DIR},
+        daemon=True,
+        name="audio-recorder",
+    )
+    recorder_thread.start()
+
+
+    wav_files_path = OUTPUT_DIR
     event_handler = AudioEventHandler()
     observer = Observer()
     observer.schedule(event_handler, wav_files_path, recursive=True)
@@ -175,6 +234,10 @@ if __name__ == "__main__":
     try:
         while True:
             time.sleep(1)
+    except KeyboardInterrupt:
+        pass
     finally:
+        _stop_event.set()
         observer.stop()
         observer.join()
+        recorder_thread.join(timeout=5)

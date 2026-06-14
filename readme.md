@@ -59,14 +59,14 @@ meshtastic --port /dev/ttyACM0 --noproto
 ### Run script automatically on startup
 Add startup script to `/etc/systemd/system`. For now we'll assume the venv has already been setup, so we can point to it in the .service file.  
 ```bash
-mv ./monitor.service /etc/systemd/system/monitor.service`
+cp ./audio_monitor.service /etc/systemd/system/audio_monitor.service`
 
 sudo systemctl daemon-reload
-sudo systemctl enable myservice   # runs on boot
-sudo systemctl start myservice    # runs now
-sudo systemctl status myservice   # check it
-journalctl -u myservice -f        # view logs
-sudo systemctl status monitor.service
+sudo systemctl enable audio_monitor   # runs on boot
+sudo systemctl start audio_monitor    # runs now
+sudo systemctl status audio_monitor   # check it
+journalctl -u audio_monitor -f        # view logs
+sudo systemctl status audio_monitor.service
 ```
 assumes device is ttyACM0
 
